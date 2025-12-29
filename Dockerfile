@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua
 COPY app.py .
 
 # 4. 复制前端页面 (这是新增的关键一步，因为不再有 Nginx 了)
-COPY polaroid_inventory_api.html .
+COPY fujifilm_inventory_api.html .
 
 # 暴露端口
 EXPOSE 5000

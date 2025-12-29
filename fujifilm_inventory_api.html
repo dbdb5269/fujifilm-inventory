@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>拍立得库存管理</title>
+    <title>Fujifilm Instant Film 库存管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,7 +38,7 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <i class="fa-solid fa-camera-retro text-pink-500 text-2xl mr-3"></i>
-                    <h1 class="text-xl font-bold text-gray-800 hidden sm:block">库存管家 <span class="text-xs text-gray-400 font-normal ml-1">Pro</span></h1>
+                    <h1 class="text-xl font-bold text-gray-800 hidden sm:block">库存管家 <span class="text-xs text-gray-400 font-normal ml-1">Fujifilm</span></h1>
                 </div>
                 <div class="flex items-center space-x-2">
                     <!-- 新增：通知按钮 -->
@@ -216,7 +216,7 @@
                     </select>
                 </div>
                 <div v-if="selectedProduct" class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center space-x-3">
-                    <img :src="selectedProduct.image || 'https://placehold.co/100x100/png?text=Film'" class="w-12 h-12 rounded-md object-cover border bg-white">
+                    <img :src="selectedProduct.image || 'https://placehold.co/100x100/png?text=Fujifilm'" class="w-12 h-12 rounded-md object-cover border bg-white">
                     <div>
                         <div class="font-bold text-sm text-gray-800">{{ selectedProduct.name }}</div>
                         <span :class="['text-[10px] px-1.5 py-0.5 rounded text-white uppercase', getTypeBadgeClass(selectedProduct.type)]">{{ selectedProduct.type }}</span>

@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 app = Flask(__name__, static_folder='.')
 
 # 数据库配置
+# 更新默认数据库名称为 fujifilm.db
 db_path = os.environ.get('DB_PATH', 'fujifilm.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -98,7 +99,8 @@ class BarkToken(db.Model):
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'polaroid_inventory_api.html')
+    # 修正：文件名更新为 fujifilm_inventory_api.html
+    return send_from_directory('.', 'fujifilm_inventory_api.html')
 
 
 # === 产品与库存 API (保持不变) ===
@@ -330,7 +332,8 @@ def trigger_notification():
             # 构造 URL: https://server/token/title/body
             url = f"{base_url}/{t.token}/{safe_title}/{safe_body}"
             # 增加 group 参数以便在手机上分组显示
-            url += "?group=PolaroidInventory"
+            # 更新为 FujifilmInventory
+            url += "?group=FujifilmInventory"
 
             resp = requests.get(url, timeout=5)
             if resp.status_code == 200:
@@ -353,4 +356,4 @@ def init_db():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=50001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
