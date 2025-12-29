@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: polaroid_app
+    restart: always
+    environment:
+      # 指定 SQLite 数据库文件存放路径 (在容器内)
+      - DB_PATH=/data/fujifilm.db
+    volumes:
+      # 将宿主机的 ./data 目录挂载到容器的 /data 目录
+      # 这样 fujifilm.db 就会保存在你电脑的 ./data 文件夹下
+      - ./data:/data
+    ports:
+      - "8081:5000"

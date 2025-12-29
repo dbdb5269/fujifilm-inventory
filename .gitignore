@@ -1,0 +1,22 @@
+--- Python ---
+pycache/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+--- Database & Data ---
+*.db
+*.sqlite3
+instance/
+data/
+
+--- IDE & OS ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+--- Docker ---
+.docker/

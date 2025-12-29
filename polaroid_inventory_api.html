@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拍立得库存管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f3f4f6; }
+        .polaroid-card {
+            background-color: white; border-radius: 12px; padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.2s;
+            height: 320px; display: flex;
+        }
+        .polaroid-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px;
+            border-radius: 50%; border-left-color: #ec4899;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translate3d(0, -20px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-camera-retro text-pink-500 text-2xl mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-800 hidden sm:block">库存管家 <span class="text-xs text-gray-400 font-normal ml-1">Pro</span></h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <!-- 新增：通知按钮 -->
+                    <button @click="openNotifyModal" class="text-gray-500 hover:text-pink-500 w-9 h-9 rounded-full hover:bg-pink-50 transition flex items-center justify-center relative" title="Bark 通知配置">
+                        <i class="fa-regular fa-bell text-lg"></i>
+                    </button>
+                    <div class="h-6 w-px bg-gray-200 mx-1"></div>
+                    <button @click="openProductManager" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium flex items-center transition">
+                        <i class="fa-solid fa-list-check mr-2"></i> 产品库
+                    </button>
+                    <button @click="openAddModal" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow flex items-center transition">
+                        <i class="fa-solid fa-plus mr-2"></i> 快速入库
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主体内容 (保持 UI 升级版布局) -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 统计面板 -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-pink-500 col-span-2 md:col-span-1 lg:col-span-2">
+                <div class="text-gray-500 text-xs font-bold uppercase mb-1">库存总数量</div>
+                <div class="text-3xl font-bold text-gray-800">{{ totalPacks }} <span class="text-sm font-normal text-gray-400">盒</span></div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 col-span-1 md:col-span-1 lg:col-span-2">
+                <div class="text-gray-500 text-xs font-bold uppercase mb-1">总投入 (原价)</div>
+                <div class="text-2xl font-bold text-gray-800">¥{{ totalOriginalPrice.toLocaleString() }}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 col-span-1 md:col-span-1 lg:col-span-2">
+                <div class="text-gray-500 text-xs font-bold uppercase mb-1">总市值 (估价)</div>
+                <div class="text-2xl font-bold text-gray-800">¥{{ totalMarketPrice.toLocaleString() }}</div>
+            </div>
+            <!-- 分类 -->
+            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between" v-for="t in ['mini','sq','wide']">
+                <span class="text-xs font-bold text-gray-500 uppercase capitalize">{{ t }}</span>
+                <span :class="['text-xl font-bold', t==='mini'?'text-blue-600':t==='sq'?'text-yellow-600':'text-purple-600']">{{ getCountByType(t) }}</span>
+            </div>
+        </div>
+
+        <!-- 过滤器 -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-3 sm:space-y-0">
+            <div class="flex bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+                <button v-for="type in ['all', 'mini', 'sq', 'wide']" :key="type" @click="currentFilter = type"
+                    :class="['px-4 py-1.5 rounded-md text-sm font-medium transition-colors', currentFilter === type ? 'bg-pink-500 text-white' : 'text-gray-600 hover:bg-gray-100']">
+                    {{ type === 'all' ? '全部' : type.toUpperCase() }}
+                </button>
+            </div>
+            <div class="relative w-full sm:w-64">
+                <input v-model="searchQuery" type="text" placeholder="搜索库存..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none bg-white">
+                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+        </div>
+
+        <div v-if="loading" class="flex justify-center py-20"><div class="spinner"></div></div>
+
+        <!-- 库存列表 -->
+        <div v-else-if="Object.keys(groupedInventory).length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div v-for="group in groupedInventory" :key="group.key" class="polaroid-card group">
+                <!-- 左侧 -->
+                <div class="w-2/5 flex flex-col pr-4 border-r border-gray-100 h-full">
+                    <div class="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 mb-3">
+                        <img :src="group.image || 'https://placehold.co/400x400/png?text=Fujifilm'" @error="handleImageError" class="w-full h-full object-cover">
+                        <span :class="getTypeBadgeClass(group.type)" class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded text-white uppercase shadow-sm">{{ group.type }}</span>
+                    </div>
+                    <h3 class="font-bold text-gray-900 leading-tight text-lg mb-1 truncate">{{ group.name }}</h3>
+                    <div class="mt-auto flex items-end justify-between">
+                        <div><div class="text-xs text-gray-400 font-medium uppercase">Total</div><div class="text-3xl font-bold text-gray-800 -mt-1">{{ group.totalQty }}</div></div>
+                        <button @click="openAddModal(group.name)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-plus text-sm"></i></button>
+                    </div>
+                </div>
+                <!-- 右侧 -->
+                <div class="w-3/5 pl-4 flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">批次详情</span>
+                        <span class="text-[10px] text-gray-400">{{ group.batches.length }} 个批次</span>
+                    </div>
+                    <div class="flex-grow overflow-y-auto custom-scrollbar -mr-2 pr-2">
+                        <div v-for="batch in group.batches" :key="batch.id" :class="['p-2 mb-2 rounded border border-transparent transition-colors', getStatusClass(batch.status)]">
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="flex items-center">
+                                    <span class="font-medium text-sm">{{ batch.expiryDate }}</span>
+                                    <span v-if="batch.status === 'expired'" class="ml-1 text-[10px] bg-red-100 text-red-600 px-1 rounded font-bold">过期</span>
+                                    <span v-else-if="batch.status === 'urgent'" class="ml-1 text-[10px] bg-orange-100 text-orange-600 px-1 rounded font-bold">临期</span>
+                                </div>
+                                <div class="flex items-center bg-white rounded border border-gray-200 shadow-sm h-6">
+                                    <button @click="updateStock(batch.id, -1)" class="w-6 h-full hover:bg-red-50 text-gray-400 text-xs flex items-center justify-center border-r border-gray-100"><i class="fa-solid fa-minus"></i></button>
+                                    <span class="w-6 h-full flex items-center justify-center text-xs font-bold text-gray-700">{{ batch.quantity }}</span>
+                                    <button @click="updateStock(batch.id, 1)" class="w-6 h-full hover:bg-green-50 text-gray-400 text-xs flex items-center justify-center border-l border-gray-100"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center text-[10px] opacity-75">
+                                <div>原: ¥{{ batch.originalPrice }} <span class="text-gray-300">|</span> 市: ¥{{ batch.marketPrice }}</div>
+                                <button @click="deleteItem(batch.id)" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div v-else class="text-center py-20">
+            <div class="inline-block p-6 rounded-full bg-gray-100 mb-4"><i class="fa-solid fa-box-open text-4xl text-gray-400"></i></div>
+            <h3 class="text-lg font-medium text-gray-900">暂无相纸库存</h3>
+        </div>
+    </main>
+
+    <!-- [新增] Bark 通知配置 Modal -->
+    <div v-if="showNotifyModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full animate-fade-in-down flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800"><i class="fa-regular fa-bell mr-2 text-pink-500"></i>Bark 通知设置</h3>
+                <button @click="showNotifyModal = false" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <!-- 1. Server URL -->
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Bark 服务器地址</label>
+                    <div class="flex">
+                        <input v-model="barkServerUrl" type="text" placeholder="https://api.day.app" class="flex-grow px-3 py-2 border rounded-l-lg text-sm bg-gray-50 focus:bg-white border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                        <button @click="saveBarkUrl" class="px-4 bg-gray-800 text-white text-sm rounded-r-lg hover:bg-gray-700">保存</button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">默认为官方服务器，可修改为自建服务地址。</p>
+                </div>
+
+                <!-- 2. Tokens List -->
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">接收设备 (Tokens)</label>
+                    <div v-if="barkTokens.length === 0" class="text-sm text-gray-400 italic mb-2">暂无设备，请添加。</div>
+                    <ul class="space-y-2 mb-3">
+                        <li v-for="t in barkTokens" :key="t.id" class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded border border-gray-100">
+                            <div>
+                                <div class="text-sm font-medium text-gray-800">{{ t.remark }}</div>
+                                <div class="text-xs text-gray-400 font-mono">{{ t.token }}</div>
+                            </div>
+                            <button @click="deleteToken(t.id)" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                        </li>
+                    </ul>
+
+                    <!-- Add Token Form -->
+                    <div class="flex space-x-2">
+                        <input v-model="newTokenRemark" type="text" placeholder="设备备注" class="w-1/3 px-3 py-2 border rounded text-sm text-sm">
+                        <input v-model="newTokenValue" type="text" placeholder="粘贴 Token" class="flex-grow px-3 py-2 border rounded text-sm text-sm">
+                        <button @click="addToken" class="px-3 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <!-- 3. Action -->
+                <div class="border-t border-gray-100 pt-6">
+                    <button @click="triggerNotify" :disabled="sendingNotify" class="w-full py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-bold shadow-md transition disabled:opacity-50 flex justify-center items-center">
+                        <i v-if="sendingNotify" class="fa-solid fa-circle-notch fa-spin mr-2"></i>
+                        <span v-else><i class="fa-solid fa-paper-plane mr-2"></i> 立即检查并推送通知</span>
+                    </button>
+                    <p class="text-center text-xs text-gray-400 mt-2">系统将统计所有过期、3个月及6个月内临期的相纸发送给列表中的设备。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Add, ProductManager) 保持原有逻辑 -->
+    <!-- 省略入库弹窗代码，保持不变... -->
+    <div v-if="showAddModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+         <!-- ... 使用上一版代码 ... -->
+         <div class="bg-white rounded-xl shadow-xl max-w-md w-full animate-fade-in-down">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">相纸入库</h3>
+                <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <form @submit.prevent="submitInventory" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">选择产品</label>
+                    <select v-model="selectedProductId" @change="onProductSelect" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:outline-none bg-white">
+                        <option value="" disabled>-- 请选择相纸类型 --</option>
+                        <option v-for="prod in products" :key="prod.id" :value="prod.id">{{ prod.name }} ({{ prod.type.toUpperCase() }})</option>
+                    </select>
+                </div>
+                <div v-if="selectedProduct" class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center space-x-3">
+                    <img :src="selectedProduct.image || 'https://placehold.co/100x100/png?text=Film'" class="w-12 h-12 rounded-md object-cover border bg-white">
+                    <div>
+                        <div class="font-bold text-sm text-gray-800">{{ selectedProduct.name }}</div>
+                        <span :class="['text-[10px] px-1.5 py-0.5 rounded text-white uppercase', getTypeBadgeClass(selectedProduct.type)]">{{ selectedProduct.type }}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div><label class="block text-xs font-medium text-gray-500 mb-1">单盒原价</label><input v-model.number="inventoryForm.originalPrice" type="number" step="0.1" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"></div>
+                    <div><label class="block text-xs font-medium text-gray-500 mb-1">单盒市价</label><input v-model.number="inventoryForm.marketPrice" type="number" step="0.1" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">数量</label><input v-model.number="inventoryForm.quantity" type="number" min="1" required class="w-full px-3 py-2 border rounded-lg"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">过期时间</label><input v-model="inventoryForm.expiryDate" type="date" required class="w-full px-3 py-2 border rounded-lg"></div>
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" @click="showAddModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-sm font-medium">确认</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Manager Modal (保持不变) -->
+    <div v-if="showProductManager" class="fixed inset-0 bg-gray-800 bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+         <!-- ... 使用上一版代码 ... -->
+         <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full h-[80vh] flex flex-col animate-fade-in-down">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">产品库管理</h3>
+                <button @click="showProductManager = false" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="flex-grow overflow-auto p-6">
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 relative">
+                    <h4 class="text-sm font-bold text-gray-700 mb-3 flex justify-between"><span>{{ isEditing ? '编辑' : '添加' }}模板</span><span v-if="isEditing" class="text-xs text-orange-500">编辑中...</span></h4>
+                    <form @submit.prevent="submitProductForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div class="md:col-span-5"><label class="text-xs text-gray-500 block mb-1">名称</label><input v-model="newProductForm.name" type="text" required class="w-full px-2 py-1.5 border rounded text-sm"></div>
+                        <div class="md:col-span-3"><label class="text-xs text-gray-500 block mb-1">规格</label><select v-model="newProductForm.type" class="w-full px-2 py-1.5 border rounded text-sm"><option value="mini">Mini</option><option value="sq">Square</option><option value="wide">Wide</option></select></div>
+                        <div class="md:col-span-4"><label class="text-xs text-gray-500 block mb-1">图片</label><input v-model="newProductForm.image" type="text" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+                        <div class="md:col-span-4"><label class="text-xs text-gray-500 block mb-1">原价</label><input v-model.number="newProductForm.originalPrice" type="number" step="0.1" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+                        <div class="md:col-span-4"><label class="text-xs text-gray-500 block mb-1">市价</label><input v-model.number="newProductForm.marketPrice" type="number" step="0.1" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+                        <div class="md:col-span-4 flex space-x-2"><button type="submit" :class="['flex-grow text-white py-1.5 rounded text-sm', isEditing?'bg-orange-500':'bg-blue-500']">{{ isEditing?'保存':'添加' }}</button><button v-if="isEditing" type="button" @click="cancelEdit" class="px-2 border bg-white text-sm">取消</button></div>
+                    </form>
+                </div>
+                <!-- List ... -->
+                <table class="min-w-full divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200">
+                        <tr v-for="prod in filteredProducts" :key="prod.id">
+                            <td class="px-3 py-2"><img :src="prod.image" class="w-8 h-8 rounded border"></td>
+                            <td class="px-3 py-2 text-sm">{{ prod.name }} <span :class="['text-[10px] px-1 rounded text-white uppercase', getTypeBadgeClass(prod.type)]">{{ prod.type }}</span></td>
+                            <td class="px-3 py-2 text-xs">¥{{ prod.originalPrice }} / ¥{{ prod.marketPrice }}</td>
+                            <td class="px-3 py-2 text-right"><button @click="startEditProduct(prod)" class="text-blue-500 text-xs mr-2">编辑</button><button @click="deleteProduct(prod.id)" class="text-red-500 text-xs">删除</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+    const API_BASE = '/api';
+
+    createApp({
+        setup() {
+            // ... (原有变量保持不变)
+            const inventory = ref([]);
+            const products = ref([]);
+            const currentFilter = ref('all');
+            const searchQuery = ref('');
+            const loading = ref(false);
+
+            // 通知相关状态
+            const showNotifyModal = ref(false);
+            const barkServerUrl = ref('');
+            const barkTokens = ref([]);
+            const newTokenRemark = ref('');
+            const newTokenValue = ref('');
+            const sendingNotify = ref(false);
+
+            // Modals & Forms
+            const showAddModal = ref(false);
+            const showProductManager = ref(false);
+            const isEditing = ref(false);
+            const editingProductId = ref(null);
+
+            const selectedProductId = ref('');
+            const selectedProduct = ref(null);
+            const inventoryForm = ref({ quantity: 1, expiryDate: '', originalPrice: 0, marketPrice: 0 });
+            const newProductForm = ref({ name: '', type: 'mini', image: '', originalPrice: 0, marketPrice: 0 });
+
+            // Filter states
+            const productManagerSearch = ref('');
+            const productManagerFilterType = ref('all');
+
+            // --- API Calls (Core) ---
+            const fetchData = async () => {
+                loading.value = true;
+                await Promise.all([fetchInventory(), fetchProducts()]);
+                loading.value = false;
+            };
+            const fetchInventory = async () => { const res = await fetch(`${API_BASE}/inventory`); if(res.ok) inventory.value = await res.json(); };
+            const fetchProducts = async () => { const res = await fetch(`${API_BASE}/products`); if(res.ok) products.value = await res.json(); };
+
+            // ... (入库、删除、更新逻辑保持不变，为节省字符略去，请直接复用上一版)
+            // 请确保 submitInventory, updateStock, deleteItem, createProduct 等函数都在这里
+            const submitInventory = async () => {
+                if(!selectedProduct.value) return;
+                const payload = { ...inventoryForm.value, name: selectedProduct.value.name, type: selectedProduct.value.type, image: selectedProduct.value.image };
+                const res = await fetch(`${API_BASE}/inventory`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                if(res.ok) { await fetchInventory(); showAddModal.value = false; }
+            };
+            const updateStock = async (id, change) => {
+                const res = await fetch(`${API_BASE}/inventory/${id}/quantity`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({change}) });
+                if(res.ok) {
+                    const data = await res.json();
+                    const item = inventory.value.find(i => i.id === id);
+                    if(item) { item.quantity = data.quantity; item.status = data.status; if(item.quantity===0) deleteItem(id); }
+                }
+            };
+            const deleteItem = async (id) => { const res = await fetch(`${API_BASE}/inventory/${id}`, { method: 'DELETE' }); if(res.ok) inventory.value = inventory.value.filter(i => i.id !== id); };
+            const submitProductForm = async () => { if(isEditing.value) { await updateProduct(); } else { await createProduct(); } };
+            const createProduct = async () => { const res = await fetch(`${API_BASE}/products`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newProductForm.value) }); if(res.ok) { await fetchProducts(); resetProductForm(); }};
+            const updateProduct = async () => { const res = await fetch(`${API_BASE}/products/${editingProductId.value}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newProductForm.value) }); if(res.ok) { await fetchProducts(); cancelEdit(); }};
+            const deleteProduct = async (id) => { if(!confirm('Sure?')) return; const res = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' }); if(res.ok) await fetchProducts(); };
+
+            // --- Notification Logic ---
+            const openNotifyModal = async () => {
+                showNotifyModal.value = true;
+                // Load Settings
+                const res1 = await fetch(`${API_BASE}/settings/bark`);
+                if(res1.ok) barkServerUrl.value = (await res1.json()).url;
+
+                const res2 = await fetch(`${API_BASE}/settings/tokens`);
+                if(res2.ok) barkTokens.value = await res2.json();
+            };
+
+            const saveBarkUrl = async () => {
+                await fetch(`${API_BASE}/settings/bark`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: barkServerUrl.value}) });
+                alert('服务器地址已保存');
+            };
+
+            const addToken = async () => {
+                if(!newTokenValue.value) return;
+                const res = await fetch(`${API_BASE}/settings/tokens`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({remark: newTokenRemark.value || 'Device', token: newTokenValue.value}) });
+                if(res.ok) {
+                    barkTokens.value.push(await res.json());
+                    newTokenValue.value = ''; newTokenRemark.value = '';
+                } else {
+                    alert('添加失败，Token 可能已存在');
+                }
+            };
+
+            const deleteToken = async (id) => {
+                if(!confirm('删除此设备？')) return;
+                const res = await fetch(`${API_BASE}/settings/tokens/${id}`, { method: 'DELETE' });
+                if(res.ok) barkTokens.value = barkTokens.value.filter(t => t.id !== id);
+            };
+
+            const triggerNotify = async () => {
+                sendingNotify.value = true;
+                try {
+                    const res = await fetch(`${API_BASE}/notify`, { method: 'POST' });
+                    const data = await res.json();
+                    if(res.ok) {
+                        alert(`发送成功！\n${data.details}`);
+                    } else {
+                        alert(`发送失败: ${data.error || data.message}`);
+                    }
+                } catch(e) {
+                    alert('网络错误');
+                } finally {
+                    sendingNotify.value = false;
+                }
+            };
+
+            // --- UI Helper Logic ---
+            const openAddModal = (name) => {
+                // ... setup form ...
+                selectedProductId.value = ''; selectedProduct.value = null;
+                const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+                inventoryForm.value = { quantity: 1, expiryDate: d.toISOString().split('T')[0], originalPrice: 0, marketPrice: 0 };
+                if (typeof name === 'string') {
+                    const found = products.value.find(p => p.name === name);
+                    if (found) { selectedProductId.value = found.id; selectedProduct.value = found; onProductSelect(); }
+                }
+                showAddModal.value = true;
+            };
+            const onProductSelect = () => { selectedProduct.value = products.value.find(p => p.id === selectedProductId.value); if(selectedProduct.value) { inventoryForm.value.originalPrice = selectedProduct.value.originalPrice; inventoryForm.value.marketPrice = selectedProduct.value.marketPrice; } };
+            const openProductManager = () => { showProductManager.value = true; cancelEdit(); };
+            const startEditProduct = (p) => { isEditing.value = true; editingProductId.value = p.id; newProductForm.value = {...p}; };
+            const cancelEdit = () => { isEditing.value = false; resetProductForm(); };
+            const resetProductForm = () => { newProductForm.value = { name:'', type:'mini', image:'', originalPrice:0, marketPrice:0 }; };
+
+            // Computed & Utils
+            const groupedInventory = computed(() => {
+                const groups = {};
+                inventory.value.filter(i => (currentFilter.value === 'all' || i.type === currentFilter.value) && i.name.toLowerCase().includes(searchQuery.value.toLowerCase())).forEach(i => {
+                    const k = `${i.name}-${i.type}`;
+                    if(!groups[k]) groups[k] = { key: k, name: i.name, type: i.type, image: i.image, totalQty: 0, batches: [] };
+                    groups[k].batches.push(i); groups[k].totalQty += i.quantity; if(!groups[k].image && i.image) groups[k].image = i.image;
+                });
+                for(let k in groups) groups[k].batches.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+                return groups;
+            });
+            const filteredProducts = computed(() => products.value.filter(p => (productManagerFilterType.value === 'all' || p.type === productManagerFilterType.value) && p.name.toLowerCase().includes(productManagerSearch.value.toLowerCase())));
+
+            const totalPacks = computed(() => inventory.value.reduce((s,i) => s + i.quantity, 0));
+            const totalOriginalPrice = computed(() => inventory.value.reduce((s,i) => s + (i.quantity * i.originalPrice), 0));
+            const totalMarketPrice = computed(() => inventory.value.reduce((s,i) => s + (i.quantity * i.marketPrice), 0));
+            const getCountByType = (t) => inventory.value.filter(i => i.type === t).reduce((s,i) => s + i.quantity, 0);
+            const getTypeBadgeClass = (t) => ({ 'mini':'bg-blue-500', 'sq':'bg-yellow-500', 'wide':'bg-purple-500' }[t] || 'bg-gray-500');
+            const getStatusClass = (s) => { switch(s){ case 'expired': return 'bg-red-50 border-l-2 border-red-500'; case 'urgent': return 'bg-orange-50 border-l-2 border-orange-400'; case 'warning': return 'bg-yellow-50 border-l-2 border-yellow-400'; default: return 'bg-gray-50 border-l-2 border-transparent'; } };
+            const handleImageError = (e) => e.target.src = "https://placehold.co/200x200/png?text=Fujifilm";
+
+            onMounted(fetchData);
+
+            return {
+                inventory, products, currentFilter, searchQuery, loading,
+                showAddModal, showProductManager, showNotifyModal,
+                selectedProductId, selectedProduct, inventoryForm, newProductForm,
+                barkServerUrl, barkTokens, newTokenRemark, newTokenValue, sendingNotify,
+                productManagerSearch, productManagerFilterType, filteredProducts,
+                groupedInventory, totalPacks, totalOriginalPrice, totalMarketPrice,
+                getCountByType, getTypeBadgeClass, getStatusClass, handleImageError,
+                openAddModal, openProductManager, openNotifyModal,
+                submitInventory, updateStock, deleteItem, submitProductForm, deleteProduct,
+                saveBarkUrl, addToken, deleteToken, triggerNotify,
+                isEditing, startEditProduct, cancelEdit, onProductSelect
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
