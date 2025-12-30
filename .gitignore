@@ -10,7 +10,7 @@ env/
 *.db
 *.sqlite3
 instance/
-data/
+data/fujifilm.db
 
 --- IDE & OS ---
 .idea/

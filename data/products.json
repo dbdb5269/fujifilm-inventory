@@ -1,0 +1,205 @@
+[
+  {
+    "name": "Instax Mini White (白边)",
+    "type": "mini",
+    "image": "mini_white.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Rainbow (彩虹)",
+    "type": "mini",
+    "image": "mini_rainbow.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Sketch (涂鸦)",
+    "type": "mini",
+    "image": "mini_sketch.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Macaron (马卡龙)",
+    "type": "mini",
+    "image": "mini_macaron.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Black (黑边)",
+    "type": "mini",
+    "image": "mini_black.jpg",
+    "original_price": 55.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Hello Kitty (kt彩绘)",
+    "type": "mini",
+    "image": "mini_hello_kitty.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Sky Blue (天空蓝)",
+    "type": "mini",
+    "image": "mini_sky_blue.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Stone Gray (石灰岩)",
+    "type": "mini",
+    "image": "mini_stone_gray.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Candy Pop (糖果波点)",
+    "type": "mini",
+    "image": "mini_candy_pop.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Flower Shower (花雨)",
+    "type": "mini",
+    "image": "mini_flower_shower.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Mermaid Tail (人鱼尾巴)",
+    "type": "mini",
+    "image": "mini_mermaid_tail.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Contact Sheet (经典胶卷)",
+    "type": "mini",
+    "image": "mini_contact_sheet.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Blue Marble (天青石)",
+    "type": "mini",
+    "image": "mini_blue_marble.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Pink Lemonade (粉色沁柠)",
+    "type": "mini",
+    "image": "mini_pink_lemonade.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Japanese Style (和风)",
+    "type": "mini",
+    "image": "mini_japanese_style.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Brocade (锦绣)",
+    "type": "mini",
+    "image": "mini_brocade.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Lavender (薰衣草紫)",
+    "type": "mini",
+    "image": "mini_lavender.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Little Twin Stars (双子星)",
+    "type": "mini",
+    "image": "mini_little_twin_stars.png",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Disney (迪士尼)",
+    "type": "mini",
+    "image": "mini_disney.png",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Heart Sketch (爱心)",
+    "type": "mini",
+    "image": "mini_heart_sketch.png",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Mini Starbucks (星巴克)",
+    "type": "mini",
+    "image": "mini_starbucks.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Square White Marble (方形汉白玉)",
+    "type": "sq",
+    "image": "square_white_marble.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Square Black (方形黑边)",
+    "type": "sq",
+    "image": "square_black.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Square White (方形白边)",
+    "type": "sq",
+    "image": "square_white.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Square Star Illumination (方形星空)",
+    "type": "sq",
+    "image": "square_star_illumination.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Square Rainbow (方形彩虹)",
+    "type": "sq",
+    "image": "square_rainbow.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Wide Rainbow (宽边彩虹)",
+    "type": "wide",
+    "image": "wide_rainbow.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Wide White (宽边白边)",
+    "type": "wide",
+    "image": "wide_white.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  },
+  {
+    "name": "Instax Square Sunset (方形日落)",
+    "type": "sq",
+    "image": "square_sunset.jpg",
+    "original_price": 0.0,
+    "market_price": 0.0
+  }
+]
